@@ -401,7 +401,7 @@ fn read_layer_record(cursor: &mut PsdCursor) -> Result<LayerRecord, Error> {
 
     // Layer name is padded to the next multiple of 4 bytes.
     // So if the name length is 9, there will be three throwaway bytes
-    // after it. Here we skip over those throwaday bytes.
+    // after it. Here we skip over those throwaway bytes.
     //
     // The 1 is the 1 byte that we read for the name length
     let bytes_mod_4 = (name_len + 1) % 4;
@@ -418,7 +418,85 @@ fn read_layer_record(cursor: &mut PsdCursor) -> Result<LayerRecord, Error> {
         let additional_layer_info_len = cursor.read_u32()?;
 
         match &key {
-            KEY_UNICODE_LAYER_NAME => {
+            b"TySh" => { // Fix indenting and move this for organization.
+				cursor.read_2()?; // Version
+
+				cursor.read(48)?; // Transformation
+
+				println!("VERSION: {:?}", cursor.read_2()?); // Text version
+				println!("DESC_VERSION: {:?}", cursor.read_4()?); // Descriptor version
+
+				cursor.read_unicode_string()?; // name from classID
+
+				println!("classID: {}", cursor.read_ascii_string()?); // classID
+
+				let num_items = cursor.read_u32()?;
+				println!("Items: {:?}", num_items);
+
+				for _ in 0..num_items { // Messing around here, haven't reached it yet.
+					let _signature = cursor.read_4()?;
+					let mut key = [0; 4];
+					key.copy_from_slice(cursor.read_4()?);
+					let additional_layer_info_len = cursor.read_u32()?;
+
+					println!("Variable String: {:?}", String::from_utf8_lossy(&key));
+					println!("Variable Bytes: {:?}", key);
+
+					match &key {
+						b"obj " => { // Reference
+							let num = cursor.read_u32()?;
+							println!("TESTING: {:?}", num);
+						}
+						b"Objc" | b"GlbO" => { // Descriptor
+							// recurse
+						}
+						b"VILs" => { // List
+
+						}
+						b"doub" => { // Double
+
+						}
+						b"UntF" => { // Unit float
+
+						}
+						b"TEXT" => { // String
+							let text = cursor.read_unicode_string()?;
+							println!("TEXT: {}", text);
+						}
+						b"enum" => { // Enumerated
+							cursor.read_unicode_string()?; // name from classID
+
+							let enum_type = cursor.read_unicode_string()?;
+							println!("ENUM: {}", enum_type); // classID
+						}
+						b"long" => { // Integer
+
+						}
+						b"comp" => { // Large Integer
+
+						}
+						b"bool" => { // Boolean
+
+						}
+						b"type" | b"GlbC" => { // Class
+
+						}
+						b"alis" => { // Alias
+
+						}
+						b"tdta" => { // Raw Data
+
+						}
+
+						_ => {
+							cursor.read(additional_layer_info_len)?;
+						}
+					}
+				}
+
+				println!("PASSED");
+			}
+			KEY_UNICODE_LAYER_NAME => {
                 name = cursor.read_unicode_string()?;
             }
             KEY_SECTION_DIVIDER_SETTING => {
