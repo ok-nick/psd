@@ -1,4 +1,7 @@
-use std::io::Cursor;
+use std::{
+	io::Cursor,
+	convert::TryInto
+};
 
 use failure::{Error, Fail};
 
@@ -274,6 +277,28 @@ impl<'a> PsdCursor<'a> {
 
         Ok(i64::from_be_bytes(array))
     }
+
+	pub fn read_ascii_string_with_length(&mut self, length: u32) -> Result<String, Error> {
+		println!("ASCII LENGTH: {}", length);
+
+		let mut result = String::new();
+		for _ in 0..length {
+			let bytes = self.read_u8()?;
+			result.push(bytes as char);
+		}
+
+		Ok(result)
+	}
+
+	/// 4 bytes (length), followed either by string or (if length is zero) 4-byte string
+	pub fn read_ascii_string(&mut self) -> Result<String, Error> {
+		let mut length = self.read_u32()?;
+		if length == 0 {
+			length = 4;
+		}
+
+		self.read_ascii_string_with_length(length)
+	}
 
     /// Reads 'Unicode string'
     ///

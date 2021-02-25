@@ -230,3 +230,12 @@ fn one_group_with_two_subgroups() {
     let layer = psd.layer_by_name("Sixth Layer").unwrap();
     assert_eq!(layer.parent_id().unwrap(), outside_group.id());
 }
+
+/// cargo test --test layer_and_mask_information_section text_layer -- --exact
+#[test]
+fn text_layer() {
+    let psd = include_bytes!("fixtures/text-layer.psd");
+    let psd = Psd::from_bytes(psd).unwrap();
+
+	psd.layers()[0].rgba().unwrap();
+}
